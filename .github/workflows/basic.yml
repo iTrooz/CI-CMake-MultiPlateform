@@ -1,0 +1,95 @@
+name: Basic
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+
+  # ----- LINUX BUILD
+  build-lin:
+    runs-on: ubuntu-latest
+    name: Build on Linux
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest -C ${{env.BUILD_TYPE}}
+      
+    - name: Upload Linux executable
+      uses: actions/upload-artifact@v2
+      with:
+        name: linux-exec
+        path: build/Test
+
+
+  # ----- WINDOWS BUILD
+  build-win:
+    runs-on: windows-latest
+    name: Build on Windows
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    # I think We only need this step if we need dependencies (will install another msys with cached installed dependencies)
+#    - name: 🟦 Install msys2
+#      uses: msys2/setup-msys2@v2
+#      with:
+#        msystem: mingw64
+#        pacboy: >-
+#          gcc:p
+#          cmake:p
+
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest -C ${{env.BUILD_TYPE}}
+      
+    - name: Upload Windows executable
+      uses: actions/upload-artifact@v2
+      with:
+        name: win-exec
+        path: build/Release/Test.exe
+        
+  # ----- MACOS BUILD
+  build-mac:
+    runs-on: macos-latest
+    name: Build on MacOS
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest -C ${{env.BUILD_TYPE}}
+
+    - name: Upload MacOS executable
+      uses: actions/upload-artifact@v2
+      with:
+        name: mac-exec
+        path: build/Test
